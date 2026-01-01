@@ -1,35 +1,81 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from 'react';
+import './App.css';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [people, setPeople] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    fetch('http://127.0.0.1:8000/api/people/')
+      .then(res => res.json())
+      .then(data => {
+        setPeople(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Connection error:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  const filteredPeople = people.filter(person =>
+    person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    person.cnic.includes(searchTerm)
+  );
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="container">
+      <header className="header">
+        <h1 className="title">Personnel Directory</h1>
+        <p className="subtitle">Management System | Database Records</p>
+
+        <div className="search-container">
+          <input
+            type="text"
+            className="search-input"
+            placeholder="Search by Name or CNIC..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </header>
+
+      {loading ? (
+        <div className="loader">Connecting to PostgreSQL Database...</div>
+      ) : (
+        <div className="grid">
+          {filteredPeople.map(person => (
+            <div key={person.id} className="card">
+              <div className="card-header">
+                <h2 className="card-name">{person.name}</h2>
+                <span className="badge">{person.occupation || "General"}</span>
+              </div>
+
+              <div className="card-body">
+                <div className="info-row"><span>Father</span><span>{person.father_name}</span></div>
+                <div className="info-row"><span>CNIC</span><span>{person.cnic}</span></div>
+                <div className="info-row"><span>Age</span><span>{person.age}</span></div>
+                <div className="info-row"><span>Email</span><span>{person.email}</span></div>
+                <div className="info-row"><span>Phone</span><span>{person.phone_number}</span></div>
+                <div className="info-row"><span>City</span><span>{person.city}</span></div>
+                <div className="info-row"><span>Address</span><span>{person.address}</span></div>
+              </div>
+
+              <div className="card-footer">
+                Added on: {new Date(person.date_added).toLocaleDateString()}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!loading && filteredPeople.length === 0 && (
+        <div className="no-results">No records match your search.</div>
+      )}
+    </div>
+  );
 }
 
-export default App
+export default App;
+  
